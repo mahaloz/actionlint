@@ -1,0 +1,5 @@
+project: actionlint
+target: expr_parser
+
+cmds:
+  - cmd: /fuzz_actionlint_expr_parser
