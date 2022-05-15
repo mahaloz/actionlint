@@ -8,7 +8,6 @@ COPY . /go/actionlint
 RUN mkdir ~/gopath && \
     export GOPATH="$HOME/gopath" && \
     export PATH="$PATH:$GOPATH/bin" && \
-    export PATH="$PATH:$GOPATH/bin" && \
     cd /go/actionlint/fuzz && \
     go install -tags production github.com/rhysd/actionlint && \
     go get github.com/dvyukov/go-fuzz/go-fuzz github.com/dvyukov/go-fuzz/go-fuzz-build && \
