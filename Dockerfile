@@ -1,19 +1,16 @@
-from golang:1.17 as builder
+ARG GOLANG_VER=latest
+ARG ALPINE_VER=latest
 
-RUN apt update && apt install clang -y
+FROM golang:${GOLANG_VER} as builder
+WORKDIR /go/src/app
+COPY go.* *.go ./
+COPY cmd cmd/
+ENV CGO_ENABLED 0
+ARG ACTIONLINT_VER=
+RUN go build -v -ldflags "-s -w -X github.com/rhysd/actionlint.version=${ACTIONLINT_VER}" ./cmd/actionlint
 
-COPY . /go/actionlint
-
-# install source of target
-RUN mkdir ~/gopath && \
-    export GOPATH="$HOME/gopath" && \
-    export PATH="$PATH:$GOPATH/bin" && \
-    cd /go/actionlint/fuzz && \
-    go install -tags production github.com/rhysd/actionlint && \
-    go get github.com/dvyukov/go-fuzz/go-fuzz github.com/dvyukov/go-fuzz/go-fuzz-build && \
-    go-fuzz-build -libfuzzer --func FuzzExprParse -o fuzz_actionlint_expr_parser.a . && \
-    clang -fsanitize=fuzzer fuzz_actionlint_expr_parser.a  -o fuzz_actionlint_expr_parser && \
-    cp fuzz_actionlint_expr_parser /fuzz_actionlint_expr_parser
-
-FROM golang:1.17
-COPY --from=builder /fuzz_actionlint_expr_parser /
+FROM alpine:${ALPINE_VER}
+COPY --from=builder /go/src/app/actionlint /usr/local/bin/
+RUN apk add --no-cache shellcheck py3-pyflakes
+USER guest
+ENTRYPOINT ["/usr/local/bin/actionlint"]
